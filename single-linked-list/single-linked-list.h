@@ -224,7 +224,7 @@ template <typename Iterable>
 void SingleLinkedList<Type>::Copy_and_Swap(const Iterable& container) {
     SingleLinkedList tmp;
     auto position = tmp.before_begin();
-    for (Type elem : container) {
+    for (const Type& elem : container) {
         position = tmp.InsertAfter(position, elem);
     }
     swap(tmp);
