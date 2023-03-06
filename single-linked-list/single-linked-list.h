@@ -9,80 +9,10 @@
 
 template <typename Type>
 class SingleLinkedList {
-    struct Node {
-        Node() = default;
-        Node(const Type& val, Node* next)
-            : value(val)
-            , next_node(next) {
-        }
-        Type value;
-        Node* next_node = nullptr;
-    };
+    struct Node;
     
     template <typename ValueType>
-        class BasicIterator {
-            friend class SingleLinkedList;
-
-            explicit BasicIterator(Node* node)
-            : node_(node) {
-            }
-
-        public:
-            using iterator_category = std::forward_iterator_tag;
-            using value_type = Type;
-            using difference_type = std::ptrdiff_t;
-            using pointer = ValueType*;
-            using reference = ValueType&;
-
-            BasicIterator() = default;
-
-            BasicIterator(const BasicIterator<Type>& other) noexcept {
-                node_ = other.node_;
-            }
-
-            BasicIterator& operator=(const BasicIterator& rhs) = default;
-
-            [[nodiscard]] bool operator==(const BasicIterator<const Type>& rhs) const noexcept {
-                return this->node_ == rhs.node_;
-            }
-
-            [[nodiscard]] bool operator!=(const BasicIterator<const Type>& rhs) const noexcept {
-                return !(*this == rhs);
-            }
-
-            [[nodiscard]] bool operator==(const BasicIterator<Type>& rhs) const noexcept {
-                return this->node_ == rhs.node_;
-            }
-
-            [[nodiscard]] bool operator!=(const BasicIterator<Type>& rhs) const noexcept {
-                return !(*this == rhs);
-            }
-
-            BasicIterator& operator++() noexcept {
-                assert(node_ != nullptr);
-                node_ = this->node_->next_node;
-                return *this;
-            }
-
-            BasicIterator operator++(int) noexcept {
-                auto old_value(*this);
-                ++(*this);
-                return old_value;
-            }
-
-            [[nodiscard]] reference operator*() const noexcept {
-                assert(node_ != nullptr);
-                return node_->value;
-            }
-
-            [[nodiscard]] pointer operator->() const noexcept {
-                assert(node_ != nullptr);
-                return &(node_->value);
-            }
-
-        private:
-            Node* node_ = nullptr;
-        };
+    class BasicIterator;
 
 public:
     using value_type = Type;
@@ -92,24 +22,11 @@ public:
     using ConstIterator = BasicIterator<const Type>;
     
     SingleLinkedList() = default;
+    SingleLinkedList(std::initializer_list<Type> values);
+    SingleLinkedList(const SingleLinkedList& other);
+    ~SingleLinkedList();
     
-    SingleLinkedList(std::initializer_list<Type> values) {
-        Copy_and_Swap(values);
-    }
-
-    SingleLinkedList(const SingleLinkedList& other) {
-        Copy_and_Swap(other);
-    }
-    
-    SingleLinkedList& operator=(const SingleLinkedList& rhs) {
-        SingleLinkedList tmp(rhs);
-        swap(tmp);
-        return *this;
-    }
-    
-    ~SingleLinkedList() {
-        Clear();
-    }
+    SingleLinkedList& operator=(const SingleLinkedList& rhs);
     
     void Clear() noexcept;
     void PushFront(const Type& value);
@@ -118,49 +35,18 @@ public:
     Iterator EraseAfter(ConstIterator pos) noexcept;
     void swap(SingleLinkedList& other) noexcept;
     
-    [[nodiscard]] size_t GetSize() const noexcept {
-        return size_;
-    }
+    [[nodiscard]] size_t GetSize() const noexcept { return size_; }
+    [[nodiscard]] bool IsEmpty() const noexcept { return size_ == 0; }
 
-    [[nodiscard]] bool IsEmpty() const noexcept {
-        return size_ == 0 ? true : false;
-    }
-
-    [[nodiscard]] Iterator begin() noexcept {
-        return BasicIterator<Type>(head_.next_node);
-    }
-
-    [[nodiscard]] Iterator end() noexcept {
-        return BasicIterator<Type>(nullptr);
-    }
-
-    [[nodiscard]] ConstIterator begin() const noexcept {
-        return cbegin();
-    }
-
-    [[nodiscard]] ConstIterator end() const noexcept {
-        return cend();
-    }
-
-    [[nodiscard]] ConstIterator cbegin() const noexcept {
-        return BasicIterator<Type>(head_.next_node);
-    }
-
-    [[nodiscard]] ConstIterator cend() const noexcept {
-        return BasicIterator<Type>(nullptr);
-    }
-    
-    [[nodiscard]] Iterator before_begin() noexcept {
-        return BasicIterator<Type>(&head_);
-    }
-
-    [[nodiscard]] ConstIterator cbefore_begin() const noexcept {
-        return BasicIterator<Type>(const_cast<Node*>(&head_));
-    }
-
-    [[nodiscard]] ConstIterator before_begin() const noexcept {
-        return cbefore_begin();
-    }
+    [[nodiscard]] Iterator begin() noexcept { return BasicIterator<Type>(head_.next_node); }
+    [[nodiscard]] Iterator end() noexcept { return BasicIterator<Type>(nullptr); }
+    [[nodiscard]] ConstIterator begin() const noexcept { return cbegin(); }
+    [[nodiscard]] ConstIterator end() const noexcept { return cend(); }
+    [[nodiscard]] ConstIterator cbegin() const noexcept { return BasicIterator<Type>(head_.next_node); }
+    [[nodiscard]] ConstIterator cend() const noexcept { return BasicIterator<Type>(nullptr); }
+    [[nodiscard]] Iterator before_begin() noexcept { return BasicIterator<Type>(&head_); }
+    [[nodiscard]] ConstIterator cbefore_begin() const noexcept { return BasicIterator<Type>(const_cast<Node*>(&head_)); }
+    [[nodiscard]] ConstIterator before_begin() const noexcept { return cbefore_begin(); }
 
 private:
     template <typename Iterable>
@@ -169,6 +55,28 @@ private:
     Node head_ = {};
     size_t size_ = 0;
 };
+
+template <typename Type>
+SingleLinkedList<Type>::SingleLinkedList(std::initializer_list<Type> values) {
+    Copy_and_Swap(values);
+}
+
+template <typename Type>
+SingleLinkedList<Type>::SingleLinkedList(const SingleLinkedList& other) {
+    Copy_and_Swap(other);
+}
+
+template <typename Type>
+SingleLinkedList<Type>::~SingleLinkedList() {
+    Clear();
+}
+
+template <typename Type>
+SingleLinkedList<Type>& SingleLinkedList<Type>::operator=(const SingleLinkedList& rhs) {
+    SingleLinkedList tmp(rhs);
+    swap(tmp);
+    return *this;
+}
 
 template <typename Type>
 void SingleLinkedList<Type>::Clear() noexcept {
@@ -224,7 +132,7 @@ template <typename Iterable>
 void SingleLinkedList<Type>::Copy_and_Swap(const Iterable& container) {
     SingleLinkedList tmp;
     auto position = tmp.before_begin();
-    for (const Type& elem : container) {
+    for (Type elem : container) {
         position = tmp.InsertAfter(position, elem);
     }
     swap(tmp);
@@ -264,3 +172,81 @@ template <typename Type>
 bool operator>=(const SingleLinkedList<Type>& lhs, const SingleLinkedList<Type>& rhs) {
     return !(rhs > lhs);
 }
+
+// --------------------------- SingleLinkedList<Type>::Node definition --------------------------
+
+template <typename Type>
+struct SingleLinkedList<Type>::Node {
+    Node() = default;
+    Node(const Type& val, Node* next)
+    : value(val) , next_node(next) {}
+
+    Type value;
+    Node* next_node = nullptr;
+};
+
+// ---------------------- SingleLinkedList<Type>::BasicIterator definition ----------------------
+
+template <typename Type>
+template <typename ValueType>
+class SingleLinkedList<Type>::BasicIterator {
+    friend class SingleLinkedList;
+
+    explicit BasicIterator(Node* node) : node_(node) {}
+
+public:
+    using iterator_category = std::forward_iterator_tag;
+    using value_type = Type;
+    using difference_type = std::ptrdiff_t;
+    using pointer = ValueType*;
+    using reference = ValueType&;
+
+    BasicIterator() = default;
+
+    BasicIterator(const BasicIterator<Type>& other) noexcept {
+        node_ = other.node_;
+    }
+
+    BasicIterator& operator=(const BasicIterator& rhs) = default;
+
+    [[nodiscard]] bool operator==(const BasicIterator<const Type>& rhs) const noexcept {
+        return this->node_ == rhs.node_;
+    }
+
+    [[nodiscard]] bool operator!=(const BasicIterator<const Type>& rhs) const noexcept {
+        return !(*this == rhs);
+    }
+
+    [[nodiscard]] bool operator==(const BasicIterator<Type>& rhs) const noexcept {
+        return this->node_ == rhs.node_;
+    }
+
+    [[nodiscard]] bool operator!=(const BasicIterator<Type>& rhs) const noexcept {
+        return !(*this == rhs);
+    }
+
+    BasicIterator& operator++() noexcept {
+        assert(node_ != nullptr);
+        node_ = this->node_->next_node;
+        return *this;
+    }
+
+    BasicIterator operator++(int) noexcept {
+        auto old_value(*this);
+        ++(*this);
+        return old_value;
+    }
+
+    [[nodiscard]] reference operator*() const noexcept {
+        assert(node_ != nullptr);
+        return node_->value;
+    }
+
+    [[nodiscard]] pointer operator->() const noexcept {
+        assert(node_ != nullptr);
+        return &(node_->value);
+    }
+
+private:
+    Node* node_ = nullptr;
+};
